@@ -1,0 +1,114 @@
+# MongoDb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: mongodb
+  name: mongo-sts-service
+  labels:
+    name: mongo
+spec:
+  ports:
+  - port: 27017
+    targetPort: 27017
+  clusterIP: None
+  selector:
+    role: mongo
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: mongodb
+  name: mongo-conf
+data:
+  mongo.conf: |
+    security:
+      keyFile: "/mnt/myConfig/mongo-keyfile"
+    replication:
+      replSetName: "rs0"
+  
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  namespace: mongodb
+  name: mongo-sts
+spec:
+  serviceName: "mongo-sts-service"
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        role: mongo
+    spec:
+      serviceAccountName: mongo
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: mongo
+          image: smchin/mongo:3.4.9
+          ports:
+            - containerPort: 27017
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: "somin"
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: "somin"
+            - name: IDENTITY_LABEL
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: ENTRYPOINT_ARGS
+              value: "--config /mnt/myConfig/mongo.conf"
+            - name: MONGO_CONFIG
+              value: "/mnt/myConfig/mongo.conf"
+            - name: MONGO_KEYFILE
+              value: "/mnt/myConfig/mongo-keyfile"
+          readinessProbe:
+            tcpSocket:
+              port: 27017
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+          volumeMounts:
+            - name: datadir
+              mountPath: /data/db
+            - name: mongo-keyfile
+              mountPath: /mnt/keyFile
+            - name: mongo-conf
+              mountPath: /mnt/config
+            - name: config
+              mountPath: "/mnt/myConfig"
+        - name: sidecar
+          image: cvallance/mongo-k8s-sidecar
+          env:
+            - name: MONGODB_USERNAME
+              value: "somin"
+            - name: MONGODB_PASSWORD
+              value: "somin"
+            - name: MONGODB_DATABASE
+              value: "admin"
+            - name: MONGO_SIDECAR_POD_LABELS
+              value: "role=mongo"
+            - name: KUBERNETES_MONGO_SERVICE_NAME
+              value: "mongo-sts-service"
+            - name: KUBE_NAMESPACE
+              value: "mongodb"
+            - name: KUBERNETES_CLUSTER_DOMAIN
+              value: "cluster.local"
+      volumes:
+        - name: mongo-keyfile
+          configMap:
+            name: mongo-keyfile
+        - name: mongo-conf
+          configMap:
+            name: mongo-conf
+        - name: config
+          emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      namespace: mongodb
+      name: datadir
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi

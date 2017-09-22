@@ -1,0 +1,16 @@
+# mongo-pv0.yaml
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mongo-pvdb0
+  labels:
+    type: local
+spec:
+  storageClassName: mongo-pvdb
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/root/data/mongo-db0"

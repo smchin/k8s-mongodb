@@ -1,0 +1,51 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  namespace: mongodb
+  name: datadir-mongo-sts-0
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  selector:
+    matchLabels:
+      app: es-editor
+      podindex: "0"
+      size: 1Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  namespace: mongodb
+  name: datadir-mongo-sts-1
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  selector:
+    matchLabels:
+      app: es-editor
+      podindex: "1"
+      size: 1Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  namespace: mongodb
+  name: datadir-mongo-sts-2
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  selector:
+    matchLabels:
+      app: es-editor
+      podindex: "2"
+      size: 1Gi

@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: mongodb
+  name: mongo-conf
+data:
+  mongo.conf: |
+    security:
+      keyFile: "/srv/mongodb/mongo-keyfile"
+    replication:
+      replSetName: "rs0"
+  
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: mongodb
+  name: mongo-keyfile
+data:
+  mongo-keyfile: |
+    r9jTZmQYOm/Ui6bfXrLnJ03KpAOR19Ko+7fKvV2WappE/9WK7NLfx9RLaDsRvr5V
+    5XGEJrEJtBoj3kS9c9c+ztRMqJ7e6MzgoDZfbKHjKXKYe5GzAsBMiaSVJLYRDSK/
+    HvKMb3PDKaTcSZLoky9VGGoFn2T0e/x9sbDLM2YpkC/uy+7MuqgXiDKK6Rd5LD7/
+    5wOz2XbpjBD+fCbYZULJQFd4mcdAgLGIx/wcAP7Y2/GJ7c6IERWDXem9nI2QgDE4
+    abCI5v675KrrUNo0MqY5n3BWjhx+xj4QHbOz5VVO1HW3YgYFwbgFEvTRF1a/zDDU
+    Aqrc0ea7QLvpAPwRLem8Xz+D5Bd6MK2Ddus1FczY3Xsm3b0HpzAIjNqYnFl56XPz
+    EjcDycOoF8BXFS6iu/4Mv/hkF0cUQG5LhlxteFTUr0z/5MCj6ZglQk2pbhWOt3nn
+    u+eGuTCB3SU5FFy6Emswh9WjJa3C2GodEJx6TTy1jvRjgUxjsfgfirJmZ7Qly9EQ
+    B4GargW26KeZmw5QmBst+Fsda/YC+mDKfM3q9J4NoBq5/eth3j+EqlRkuEjnk6Ci
+    72d3/Y6b4ybwj6Gu/PlwLb/ch5MOa7TiWyvdrb7xPGPGcLQmSd98P+taNsREqhn3
+    d68+RqfzflI3sVsjNX/MdjUA7ZyNMkiJVV0qCsO2cDAidxfJGZJ4d4QrEYMYazH1
+    cm7WA57/kcgEzC2YjAMnU28/LPHpdF/4DhUx58KqaSRvBDqH06qljqT5z/3WXvvJ
+    pzLj97rFmRurjNxgEMLnSzxlQ0p4w8fnvPukHwOseLlQxt/frBguVEmcvBXEsWNB
+    w723ZG4GgOW6+z3AVafdJFHPMwce3L3/qkHeSQ8QtYD+ipG97bSBYrHa2ptoSY1f
+    Bq7PkoEf0/TbK/rtxaQF+DYZV1g97H1HBl5dpO+yk7QQfXA5gAweoVZJDnpewhZJ
+    ipXxAcaXS103KzwCHuxEbrqntVf6o3FK2Sg2RAxsVwjSRidz

@@ -15,19 +15,6 @@ spec:
   selector:
     role: mongo
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  namespace: mongodb
-  name: mongo-conf
-data:
-  mongo.conf: |
-    security:
-      keyFile: "/mnt/myConfig/mongo-keyfile"
-    replication:
-      replSetName: "rs0"
-  
----
 apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
@@ -41,28 +28,33 @@ spec:
       labels:
         role: mongo
     spec:
-      serviceAccountName: mongo
+      serviceAccountName: mongo-cloud-infra-sa
+      automountServiceAccountToken: true
       terminationGracePeriodSeconds: 10
       containers:
         - name: mongo
           image: smchin/mongo:3.4.9
+          imagePullPolicy: Always
           ports:
             - containerPort: 27017
+          resources:
+            requests:
+              memory: "16Gi"
+              cpu: "4"
+            limits:
+              memory: "32Gi"
+              cpu: "8"
           env:
             - name: MONGO_INITDB_ROOT_USERNAME
-              value: "somin"
+              value: "root"
             - name: MONGO_INITDB_ROOT_PASSWORD
-              value: "somin"
+              value: "rootp@ssword"
             - name: IDENTITY_LABEL
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
             - name: ENTRYPOINT_ARGS
-              value: "--config /mnt/myConfig/mongo.conf"
-            - name: MONGO_CONFIG
-              value: "/mnt/myConfig/mongo.conf"
-            - name: MONGO_KEYFILE
-              value: "/mnt/myConfig/mongo-keyfile"
+              value: "--config /mnt/config/mongo.conf"
           readinessProbe:
             tcpSocket:
               port: 27017
@@ -72,18 +64,16 @@ spec:
             - name: datadir
               mountPath: /data/db
             - name: mongo-keyfile
-              mountPath: /mnt/keyFile
+              mountPath: /mnt/keyfile
             - name: mongo-conf
               mountPath: /mnt/config
-            - name: config
-              mountPath: "/mnt/myConfig"
         - name: sidecar
           image: cvallance/mongo-k8s-sidecar
           env:
             - name: MONGODB_USERNAME
-              value: "somin"
+              value: "root"
             - name: MONGODB_PASSWORD
-              value: "somin"
+              value: "rootp@ssword"
             - name: MONGODB_DATABASE
               value: "admin"
             - name: MONGO_SIDECAR_POD_LABELS
@@ -91,7 +81,7 @@ spec:
             - name: KUBERNETES_MONGO_SERVICE_NAME
               value: "mongo-sts-service"
             - name: KUBE_NAMESPACE
-              value: "mongodb"
+              value: mongodb
             - name: KUBERNETES_CLUSTER_DOMAIN
               value: "cluster.local"
       volumes:
@@ -111,4 +101,4 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storage: 1Gi
+          storage: 20Gi

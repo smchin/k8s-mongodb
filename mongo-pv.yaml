@@ -3,9 +3,9 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: mongo-es-editor-1gi-0
+  name: mongo-cloud-infra-1gi-0
   labels:
-    app: es-editor
+    app: mongo-cloud-infra
     podindex: "0"
     size: 1Gi
 spec:
@@ -19,9 +19,9 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: mongo-es-editor-1gi-1
+  name: mongo-cloud-infra-1gi-1
   labels:
-    app: es-editor
+    app: mongo-cloud-infra
     podindex: "1"
     size: 1Gi
 spec:
@@ -35,9 +35,9 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: mongo-es-editor-1gi-2
+  name: mongo-cloud-infra-1gi-2
   labels:
-    app: es-editor
+    app: mongo-cloud-infra
     podindex: "2"
     size: 1Gi
 spec:

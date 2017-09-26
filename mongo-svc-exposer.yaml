@@ -1,16 +1,16 @@
 apiVersion: v1
 kind: Service
 metadata:
+  namespace: mongodb
   name: mongo-exposer-0
-  namespace: mongodb
 spec:
   ports:
-  - nodePort: 32000
+  - nodePort: 30307
     port: 27017
     protocol: TCP
     targetPort: 27017
   selector:
-    exposed-name: mongo-0
+    identify: mongo-sts-0
   sessionAffinity: None
   type: LoadBalancer
 status:
@@ -19,16 +19,16 @@ status:
 apiVersion: v1
 kind: Service
 metadata:
+  namespace: mongodb
   name: mongo-exposer-1
-  namespace: mongodb
 spec:
   ports:
-  - nodePort: 32001
+  - nodePort: 30308
     port: 27017
     protocol: TCP
     targetPort: 27017
   selector:
-    exposed-name: mongo-1
+    identify: mongo-sts-1
   sessionAffinity: None
   type: LoadBalancer
 status:
@@ -37,16 +37,16 @@ status:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mongo-exposer-2
   namespace: mongodb
+  name: mongo-exposer-2
 spec:
   ports:
-  - nodePort: 32002
+  - nodePort: 30309
     port: 27017
     protocol: TCP
     targetPort: 27017
   selector:
-    exposed-name: mongo-2
+    identify: mongo-sts-2
   sessionAffinity: None
   type: LoadBalancer
 status:

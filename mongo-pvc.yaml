@@ -12,7 +12,7 @@ spec:
       storage: 1Gi
   selector:
     matchLabels:
-      app: es-editor
+      app: mongo-cloud-infra
       podindex: "0"
       size: 1Gi
 ---
@@ -29,7 +29,7 @@ spec:
       storage: 1Gi
   selector:
     matchLabels:
-      app: es-editor
+      app: mongo-cloud-infra
       podindex: "1"
       size: 1Gi
 ---
@@ -46,6 +46,6 @@ spec:
       storage: 1Gi
   selector:
     matchLabels:
-      app: es-editor
+      app: mongo-cloud-infra
       podindex: "2"
       size: 1Gi

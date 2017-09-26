@@ -20,7 +20,12 @@ if [[ "$originalArgOne" == mongo* ]] && [ "$(id -u)" = '0' ]; then
 	chown --dereference mongodb "/proc/$$/fd/1" "/proc/$$/fd/2" || :
 	# ignore errors thanks to https://github.com/docker-library/mongo/issues/149
 
-	exec gosu mongodb "$BASH_SOURCE" "$@"
+        [[ -d /svsrvr/mongodb ]] || mkdir -p /srv/mongodb
+        cp /mnt/keyfile/mongo-keyfile /srv/mongodb/mongo-keyfile
+        chmod 400 /srv/mongodb/mongo-keyfile
+        chown mongodb:mongodb /srv/mongodb/mongo-keyfile
+	echo "[MyLog] copy mongo-keyfile"
+        exec gosu mongodb "$BASH_SOURCE" "$@"
 fi
 
 # you should use numactl to start your mongod instances, including the config servers, mongos instances, and any clients.
@@ -249,12 +254,11 @@ if [ "$originalArgOne" = 'mongod' ]; then
 	unset "${!MONGO_INITDB_@}"
 fi
 
-cp /mnt/config/mongo.conf /mnt/myConfig/mongo.conf
-cp /mnt/keyFile/mongo-keyfile /mnt/myConfig/mongo-keyfile
-chmod 400 /mnt/myConfig/mongo-keyfile
-
 if [ ! -z "$IDENTITY_LABEL" ]; then
-    kubectl label --overwrite pod "$(hostname)" "identity=$(hostname)"
+    echo "[MyLog] label pod after 20s"
+    sleep 20
+#    kubectl label --overwrite pod "$(hostname)" "identity=$(hostname)"
+    labeler
 fi
 
 if [ ! -z "$ENTRYPOINT_ARGS" ]; then
@@ -263,4 +267,3 @@ if [ ! -z "$ENTRYPOINT_ARGS" ]; then
 else
     exec "$@"
 fi
-

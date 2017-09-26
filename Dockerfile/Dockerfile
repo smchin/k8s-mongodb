@@ -73,8 +73,10 @@ VOLUME /data/db /data/configdb
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN ln -s usr/local/bin/docker-entrypoint.sh /entrypoint.sh # backwards compat
 
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.7.5/bin/linux/amd64/kubectl /usr/local/bin/kubectl
-RUN chmod +x /usr/local/bin/kubectl
+#COPY app /usr/local/bin/app
+COPY ./labeler /usr/local/bin/labeler
+#ADD https://storage.googleapis.com/kubernetes-release/release/v1.7.5/bin/linux/amd64/kubectl /usr/local/bin/#kubectl
+#RUN chmod +x /usr/local/bin/kubectl
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 

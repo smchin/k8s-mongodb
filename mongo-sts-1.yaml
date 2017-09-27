@@ -34,16 +34,16 @@ spec:
       containers:
         - name: mongo
           image: smchin/mongo:3.4.9
-          imagePullPolicy: Always
+          # imagePullPolicy: Always
           ports:
             - containerPort: 27017
-          resources:
-            requests:
-              memory: "16Gi"
-              cpu: "4"
-            limits:
-              memory: "32Gi"
-              cpu: "8"
+          # resources:
+          #   requests:
+          #     memory: "16Gi"
+          #     cpu: "4"
+          #   limits:
+          #     memory: "32Gi"
+          #     cpu: "8"
           env:
             - name: MONGO_INITDB_ROOT_USERNAME
               value: "root"
@@ -68,8 +68,13 @@ spec:
             - name: mongo-conf
               mountPath: /mnt/config
         - name: sidecar
-          image: cvallance/mongo-k8s-sidecar
+          image: smchin/k8s-mongo-sidecar:0.1
+          imagePullPolicy: Always
           env:
+            - name: CLUSTER_EXTERNAL_IP
+              value: "10.0.2.15"
+            - name: MONGO_NODEPORT_SERVICE_LABLES
+              value: "name=mongo-nodeport-service"
             - name: MONGODB_USERNAME
               value: "root"
             - name: MONGODB_PASSWORD

@@ -3,6 +3,8 @@ kind: Service
 metadata:
   namespace: mongodb
   name: mongo-exposer-0
+  labels:
+    name: mongo-nodeport-service
 spec:
   ports:
   - nodePort: 30307
@@ -21,6 +23,8 @@ kind: Service
 metadata:
   namespace: mongodb
   name: mongo-exposer-1
+  labels:
+    name: mongo-nodeport-service
 spec:
   ports:
   - nodePort: 30308
@@ -39,6 +43,8 @@ kind: Service
 metadata:
   namespace: mongodb
   name: mongo-exposer-2
+  labels:
+    name: mongo-nodeport-service
 spec:
   ports:
   - nodePort: 30309

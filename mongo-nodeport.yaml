@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-name-mongodb-nodeport-0
+  namespace: project-name
+  labels:
+    projectName: "project-name"
+    serviceName: "service-name"
+    dbType: "mongodb"
+    ordinal: "0"
+    identity: "mongo-nodeport-service"
+spec:
+  ports:
+  - nodePort: 32000
+    port: 27017
+    protocol: TCP
+    targetPort: 27017
+  selector:
+    identity: service-name-mongodb-0
+  sessionAffinity: None
+  type: NodePort
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-name-mongodb-nodeport-1
+  namespace: project-name
+  labels:
+    projectName: "project-name"
+    serviceName: "service-name"
+    dbType: "mongodb"
+    ordinal: "1"
+    identity: "mongo-nodeport-service"
+spec:
+  ports:
+  - nodePort: 32001
+    port: 27017
+    protocol: TCP
+    targetPort: 27017
+  selector:
+    identity: service-name-mongodb-1
+  sessionAffinity: None
+  type: NodePort
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-name-mongodb-nodeport-2
+  namespace: project-name
+  labels:
+    projectName: "project-name"
+    serviceName: "service-name"
+    dbType: "mongodb"
+    ordinal: "2"
+    identity: "mongo-nodeport-service"
+spec:
+  ports:
+  - nodePort: 32002
+    port: 27017
+    protocol: TCP
+    targetPort: 27017
+  selector:
+    identity: service-name-mongodb-2
+  sessionAffinity: None
+  type: NodePort
+status:
+  loadBalancer: {}

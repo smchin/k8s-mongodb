@@ -1,51 +1,71 @@
----
-kind: PersistentVolumeClaim
 apiVersion: v1
+kind: PersistentVolumeClaim
 metadata:
-  namespace: mongodb
-  name: datadir-mongo-sts-0
+  namespace: project-name
+  name: datadir-service-name-mongodb-0
+  labels:
+    ordinal: "0"
+    projectName: "project-name"
+    serviceName: "service-name"
+    dbType: "mongodb"
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 1Gi
   selector:
     matchLabels:
-      app: mongo-cloud-infra
-      podindex: "0"
-      size: 1Gi
+      capacity: "1Gi"
+      ordinal: "0"
+      projectName: "project-name"
+      serviceName: "service-name"
+      dbType: "mongodb"
 ---
-kind: PersistentVolumeClaim
 apiVersion: v1
+kind: PersistentVolumeClaim
 metadata:
-  namespace: mongodb
-  name: datadir-mongo-sts-1
+  namespace: project-name
+  name: datadir-service-name-mongodb-1
+  labels:
+    ordinal: "1"
+    projectName: "project-name"
+    serviceName: "service-name"
+    dbType: "mongodb"
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 1Gi
   selector:
     matchLabels:
-      app: mongo-cloud-infra
-      podindex: "1"
-      size: 1Gi
+      capacity: "1Gi"
+      ordinal: "1"
+      projectName: "project-name"
+      serviceName: "service-name"
+      dbType: "mongodb"
 ---
-kind: PersistentVolumeClaim
 apiVersion: v1
+kind: PersistentVolumeClaim
 metadata:
-  namespace: mongodb
-  name: datadir-mongo-sts-2
+  namespace: project-name
+  name: datadir-service-name-mongodb-2
+  labels:
+    ordinal: "2"
+    projectName: "project-name"
+    serviceName: "service-name"
+    dbType: "mongodb"
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 1Gi
   selector:
     matchLabels:
-      app: mongo-cloud-infra
-      podindex: "2"
-      size: 1Gi
+      capacity: "1Gi"
+      ordinal: "2"
+      projectName: "project-name"
+      serviceName: "service-name"
+      dbType: "mongodb"

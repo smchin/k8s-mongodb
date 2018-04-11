@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: project-name
+  name: service-name-mongodb
+  labels:
+    projectName: "project-name"
+    serviceName: "service-name"
+    dbType: "mongodb"
+data:
+  mongo-keyfile: |
+    k93f62QHqS9QG1JWKgiatja9GLcarYgnzQrSgejOD4k/px8PYVriYPyFNVgzZmcz
+    5kk9L/2qJF5nTv5DTbLQzpMgqTrmipBrkegkppVtweWUkcHgQOcGdsWOQZFdi4bO
+    QYdE4SiQhgVdlgsvW7W6oC86MAKAaYVNoZ6bPN0PTMFsAgHQII8XieQtWN0DMhlr
+    zIuOpetAk8AT5H8Qne2DpqH/zgsweDm0s0yTyuGMWne8dzEhpPh7fPfanXrelgJp
+    xw78dXLxi+bY/fPvyQNGqOPKq5t+QlacDka/z1IMd1qph71ghqcWjcde4uHW/blk
+    YPnnD/xJrDrZeGU1wT3UNM6nTKSo5hLfwmACFyn7cGsA64+dL8dH3YvqNhWfiJ81
+    /83xcNdeX86a9t+QVieLRG5SK0YoBa+B2OCjaw3U8+1HO2+yZLnclkRcNQYuYgUR
+    tC5qY49p3i6Q+Ch/pNewQM1RkfUdYDZ3XNexsX84leDC3qj35oTjsKOOYgXTunjE
+    WeBO06qkQrhKkOLlp0SmFmQdsYs9s6r9s8zgqJ/CeoRLcpUKDbDoC9PzYYvbESe2
+    W1lSZDStdajy4vDajjx/tSIMBYU+yWC2jU3Z4uEXesI5mlUbMB/oQijbyJcxCG5s
+    ltVIonD8NkOgQz3njLKRLYd92BT/9SnlMnpGDlmNgDce/f9HAQXufjI475+JDrYC
+    IlSd/kRB2E07G3M/zIk5e/A9oQFR/xJTED/Q0AzUOvPNVuJ82HnoHqvojzW3GrsC
+    JwIrYBwgpfOD30474HRrHiFkswneXYak+mErEPyASP82BTlK7KjdKjf5r6+x5z3u
+    lzPSce4uewbViFIGTOA6AzQQfBIjw29IO2Rrar/ok/JWu2HovH6CyBMU/+yEU0LX
+    ZzmjFgiUuA1Fz6LysdSGc20lFfs0WFWZlaDJbEvbOnmYfVxYT70AOL6Pm45YY00w
+    bzVQJ8qqPy4tQaKr25HvP+nuGRpgzo6k1gsLXp9p9LNTz7TI
+  mongo.conf: |
+    security:
+      keyFile: "/srv/mongodb/mongo-keyfile"
+    replication:
+      replSetName: "rs00"
+    net:
+      bindIp: 0.0.0.0
+      port: 27017

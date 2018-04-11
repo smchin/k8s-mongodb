@@ -5,6 +5,21 @@ var config = require('./config');
 
 var localhost = '127.0.0.1'; //Can access mongo as localhost from a sidecar
 
+var getDbWithClient = function(host, done) {
+  console.log('[mongo] getDbWithClient()');
+    //If they called without host like getDb(function(err, db) { ... });
+  if (arguments.length === 1) {
+    if (typeof arguments[0] === 'function') {
+      done = arguments[0];
+      host = localhost;
+    } else {
+      throw new Error('getDb illegal invocation. User either getDb(\'options\', function(err, db) { ... }) OR getDb(function(err, db) { ... })');
+    }
+  }
+
+  console.log('[mongo] getDbWithClient() host:', host);
+}
+
 var getDb = function(host, done) {
   console.log('[mongo] getDb()');
   //If they called without host like getDb(function(err, db) { ... });
@@ -54,9 +69,10 @@ var replSetGetConfig = function(db, done) {
   console.log('[mongo] replSetGetConfig()');
   db.admin().command({ replSetGetConfig: 1 }, {}, function (err, results) {
     if (err) {
+      console.log('[mongo] replSetGetConfig error: \n', err);
       return done(err);
     }
-
+    console.log('[mongo] replSetGetConfig config: \n', results.config);
     return done(null, results.config);
   });
 };
@@ -65,9 +81,10 @@ var replSetGetStatus = function(db, done) {
   console.log('[mongo] replSetGetStatus()');
   db.admin().command({ replSetGetStatus: {} }, {}, function (err, results) {
     if (err) {
+      console.log('[mongo] replSetGetStatus error: \n', err);
       return done(err);
     }
-
+    console.log('[mongo] replSetGetStatus results: \n', results);
     return done(null, results);
   });
 };
@@ -93,9 +110,10 @@ var initReplSet = function(db, hostIpAndPort, done) {
         replSetReconfig(db, rsConfig, false, callback);
       }, function(err, results) {
         if (err) {
+          console.log('[mongo] initReplSet replSetReconfig error\n', err);
           return done(err);
         }
-
+        console.log('[mongo] initReplSet replSetReconfig results\n', results);
         return done();
       });
     });
@@ -104,8 +122,9 @@ var initReplSet = function(db, hostIpAndPort, done) {
 
 var replSetReconfig = function(db, rsConfig, force, done) {
   console.log('[mongo] replSetReconfig()', rsConfig);
-
-  rsConfig.version++;
+  if (!force) {
+    rsConfig.version++;
+  }
 
   db.admin().command({ replSetReconfig: rsConfig, force: force }, {}, function (err) {
     if (err) {
@@ -117,18 +136,54 @@ var replSetReconfig = function(db, rsConfig, force, done) {
 };
 
 var addNewReplSetMembers = function(db, addrToAdd, addrToRemove, shouldForce, done) {
-  console.log('[mongo] addNewReplSetMembers()');
+  console.log('[mongo] addNewReplSetMembers() shouldForce: ', shouldForce);
   replSetGetConfig(db, function(err, rsConfig) {
     if (err) {
       return done(err);
     }
-
-    removeDeadMembers(rsConfig, addrToRemove);
-
-    addNewMembers(rsConfig, addrToAdd);
+    if (!shouldForce) {
+      removeDeadMembers(rsConfig, addrToRemove, shouldForce);
+      addNewMembers(rsConfig, addrToAdd, shouldForce);
+    } else {
+      replSetReconfigMembers(rsConfig, addrToAdd);
+    }
 
     replSetReconfig(db, rsConfig, shouldForce, done);
   });
+};
+
+var replSetReconfigMembers = function(rsConfig, addrsToAdd) {
+  console.log('[mongo] replSetReconfigMembers()');
+  var candidates = addrsToAdd.slice(0);
+  var members = rsConfig.members;
+  var newMembers = new Array();
+  var member;
+  for (var i in members) {
+    for (var j in candidates) {
+      if (members[i].host === candidates[j]) {
+        member = {_id: members[i]._id, host: members[i].host};
+        console.log('[mongo] replSetReconfigMembers add: ', member);
+        newMembers.push(member);
+        candidates.splice(j,1);
+        break;
+      }
+    }
+  }
+  console.log('[mongo] replSetReconfigMembers candidates: ', candidates);
+  if (candidates.length > 0) {
+    var max = 0;
+    for (var i in newMembers) {
+      if (newMembers[i]._id > max) {
+        max = newMembers[i]._id;
+      }
+    }
+    for (var j in candidates) {
+      member = {_id: ++max, host: candidates[j]};
+      console.log('[mongo] replSetReconfigMembers add: ', member);
+      newMembers.push(member);
+    }
+  }
+  rsConfig.members = newMembers;
 };
 
 var addNewMembers = function(rsConfig, addrsToAdd) {
@@ -191,6 +246,7 @@ var isInReplSet = function(ip, done) {
 
 module.exports = {
   getDb: getDb,
+  getDbWithClient: getDbWithClient,
   replSetGetStatus: replSetGetStatus,
   initReplSet: initReplSet,
   addNewReplSetMembers: addNewReplSetMembers,

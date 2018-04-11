@@ -24,21 +24,22 @@ var getMongoPods = function getPods(done) {
     for (var j in podResult) {
       pods = pods.concat(podResult[j].items)
     }
+    // MONGO_SIDECAR_POD_LABELS
     var labels = config.mongoPodLabelCollection;
     var results = [];
     for (var i in pods) {
       var pod = pods[i];
       if (podContainsLabels(pod, labels)) {
         results.push(pod);
+        console.log('[MyLog] k8s.getMongoPods() pod: ', pod.metadata.name);
       }
     }
-
     done(null, results);
   });
 };
 
 var podContainsLabels = function podContainsLabels(pod, labels) {
-  console.log('[MyLog] podContainsLabels()');
+  // console.log('[MyLog] podContainsLabels()');
   if (!pod.metadata || !pod.metadata.labels) return false;
 
   for (var i in labels) {
@@ -47,7 +48,6 @@ var podContainsLabels = function podContainsLabels(pod, labels) {
       return false;
     }
   }
-
   return true;
 };
 
@@ -64,25 +64,27 @@ var hasLables = function (res, labels) {
 
 var getNodePortServices = function (done) {
     console.log('[k8s] getNodePortServices()');
+    // MONGO_NODEPORT_SERVICE_LABLES
     var labels = config.mongoNodePortSeviceCollection;
     client.services.get(function (err, result) {
-      console.log('[k8s] getNodePortServices client.services.get()');
         if (err) {
-          console.log('[k8s] client get node port service err', err);
+          console.log('[k8s] getNodePortServices err', err);
           return;
         }
         var allServices = [];
         for (var j in result) {
-          var item = result[j].items;
-            allServices = allServices.concat(result[j].items);
+          var items = result[j].items;
+          allServices = allServices.concat(result[j].items);
         }
-	var nodeporServices = [];
+        var nodeporServices = [];
         for (var ii in allServices) {
           if (hasLables(allServices[ii], labels)) {
             nodeporServices = nodeporServices.concat(allServices[ii]);
           }
         }
-        console.log('[k8s] nodeporServices length: ', nodeporServices.length);
+        for (var iii in nodeporServices) {
+          console.log('    nodeporService: ', nodeporServices[iii].metadata.name);  
+        }
         done(null, nodeporServices);
     });
 }

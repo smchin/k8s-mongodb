@@ -1,0 +1,88 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  namespace: project-name
+  name: service-name-mongodb
+  labels:
+    projectName: "project-name" 
+    serviceName: "service-name"
+    dbType: "mongodb"
+spec:
+  serviceName: "service-name-mongodb-sts"
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        projectName: "project-name" 
+        serviceName: "service-name"
+        dbType: "mongodb"
+    spec:
+      serviceAccountName: "service-name-mongodb"
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: mongo
+          image: smchin/mongo:3.6.3.0
+          command:
+            - docker-entrypoint.sh
+            - mongod
+            - "--replSet"
+            - rs0
+            - "--bind_ip"
+            - 0.0.0.0
+            - "--keyFile"
+            - "/srv/mongodb/mongo-keyfile"
+          ports:
+            - containerPort: 27017
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: root
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: "rootp@ssword"
+            - name: IDENTITY_LABEL
+              valueFrom:
+                fieldRef:
+                  fieldPath: "metadata.name" 
+          readinessProbe:
+            tcpSocket:
+              port: 27017
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+          volumeMounts:
+            - name: datadir
+              mountPath: "/data/db"
+            - name: mongo-conf
+              mountPath: "/mnt/config"
+            - name: mongo-conf
+              mountPath: "/mnt/keyfile"
+        - name: sidecar
+          image: smchin/k8s-mongo-sidecar:1.0
+          env:
+            - name: CLUSTER_EXTERNAL_IP
+              value: "10.0.2.15"
+            - name: MONGO_NODEPORT_SERVICE_LABLES
+              value: "identity=mongo-nodeport-service"
+            - name: MONGODB_USERNAME
+              value: "root"
+            - name: MONGODB_PASSWORD
+              value: "rootp@ssword"
+            - name: MONGODB_DATABASE
+              value: "admin"
+            - name: MONGO_SIDECAR_POD_LABELS
+              value: "serviceName=service-name,dbType=mongodb,projectName=project-name"
+            - name: KUBERNETES_MONGO_SERVICE_NAME
+              value: "service-name-mongodb-sts"      
+      volumes:
+        - name: mongo-conf
+          configMap:
+            name: "service-name-mongodb"
+        - name: config
+          emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+      namespace: project-name
+    spec:
+      accessModes: [ "ReadWriteMany" ]
+      resources:
+        requests:
+          storage: 1Gi

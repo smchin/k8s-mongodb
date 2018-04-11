@@ -1,29 +1,26 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  namespace: mongodb
-  name: mongo-cloud-infra-sa
+  namespace: project-name
+  name: service-name-mongodb
+  labels:
+    projectName: "project-name" 
+    serviceName: "service-name"
+    dbType: "mongodb"
 ---
-kind: Role
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: "rbac.authorization.k8s.io/v1"
+kind: ClusterRoleBinding
 metadata:
-  name: mongo-cloud-infra-pod-patcher
-rules:
-# "" indicates the core API group
-- apiGroups: [" "] 
-  resources: ["pods"]
-  verbs: ["get", "watch", "list", "patch"]
----
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  namespace: mongodb
-  name: mongo-cloud-infra-patcher-binding
+  name: project-name--service-name-mongodb
+  labels:
+    projectName: "project-name" 
+    serviceName: "service-name"
+    dbType: "mongodb"
 roleRef:
-  kind: Role
-  name: mongo-cloud-infra-pod-patcher
-  apiGroup: rbac.authorization.k8s.io
+  apiGroup: "rbac.authorization.k8s.io"
+  kind: "ClusterRole"
+  name: "cluster-admin"
 subjects:
-- kind: ServiceAccount
-  namespace: mongodb
-  name: mongo-cloud-infra-sa
+  - kind: "ServiceAccount"
+    namespace: project-name
+    name: service-name-mongodb

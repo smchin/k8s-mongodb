@@ -1,49 +1,53 @@
-# mongo-pv0.yaml
----
-apiVersion: v1
 kind: PersistentVolume
+apiVersion: v1
 metadata:
-  name: mongo-cloud-infra-1gi-0
+  name: project-name--service-name-mongodb-0
   labels:
-    app: mongo-cloud-infra
-    podindex: "0"
-    size: 1Gi
+    ordinal: "0"
+    projectName: "project-name"
+    serviceName: "service-name"
+    dbType: "mongodb"
+    capacity: "1Gi"
 spec:
   capacity:
     storage: 1Gi
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   hostPath:
-    path: "/root/data/mongo-test-1Gi-0"
+    path: "/data/mongo-dir-0"
 ---
-apiVersion: v1
 kind: PersistentVolume
+apiVersion: v1
 metadata:
-  name: mongo-cloud-infra-1gi-1
+  name: project-name--service-name-mongodb-1
   labels:
-    app: mongo-cloud-infra
-    podindex: "1"
-    size: 1Gi
+    ordinal: "1"
+    projectName: "project-name"
+    serviceName: "service-name"
+    dbType: "mongodb"
+    capacity: "1Gi"
 spec:
   capacity:
     storage: 1Gi
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   hostPath:
-    path: "/root/data/mongo-test-1Gi-1"
+    path: "/data/mongo-dir-1"
 ---
-apiVersion: v1
 kind: PersistentVolume
+apiVersion: v1
 metadata:
-  name: mongo-cloud-infra-1gi-2
+  name: project-name--service-name-mongodb-2
   labels:
-    app: mongo-cloud-infra
-    podindex: "2"
-    size: 1Gi
+    ordinal: "2"
+    projectName: "project-name"
+    serviceName: "service-name"
+    dbType: "mongodb"
+    capacity: "1Gi"
 spec:
   capacity:
     storage: 1Gi
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   hostPath:
-    path: "/root/data/mongo-test-1Gi-2"
+    path: "/data/mongo-dir-2"

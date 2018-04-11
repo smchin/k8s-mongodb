@@ -29,7 +29,8 @@ var init = function(done) {
 };
 
 var workloop = function workloop() {
-  console.log('[worker] workloop()')
+  var now = new Date().getTime();
+  console.log('[worker] workloop() ==== ', now, ' ====');
   if (!hostIp || !hostIpAndPort) {
     throw new Error('Must initialize with the host machine\'s addr');
   }
@@ -67,7 +68,7 @@ var workloop = function workloop() {
     //If it works with no errors, they are in the rs
     //If we get a specific error, it means they aren't in the rs
     mongo.replSetGetStatus(db, function(err, status) {
-      console.log('[worker] replSetGetStatus ' + status);
+      console.log('[worker] replSetGetStatus callback()');
       if (err) {
         if (err.code && err.code == 94) {
           notInReplicaSet(db, pods, nodeportServices, function(err) {
@@ -141,9 +142,6 @@ var primaryWork = function(db, pods, services, members, shouldForce, done) {
   var addrToRemove = addrToRemoveLoop(members);
 
   if (addrToAdd.length || addrToRemove.length) {
-    console.log('[worker] Addresses to add:    ', addrToAdd);
-    console.log('[worker] Addresses to remove: ', addrToRemove);
-
     mongo.addNewReplSetMembers(db, addrToAdd, addrToRemove, shouldForce, done);
     return;
   }
@@ -182,12 +180,13 @@ var notInReplicaSet = function(db, pods, services, done) {
     }
 
     if (podElection(pods)) {
-      console.log('[worker] Pod has been elected for replica set initialization');
+      console.log('[worker] notInReplicaSet Pod has been elected for replica set initialization');
       var primary = pods[0]; // After the sort election, the 0-th pod should be the primary.
+      console.log("[worker] after election, primary is ", primary.metadata.name);
       var primaryStableNetworkAddressAndPort = getPodStableNetworkAddressAndPort(primary);
       // Prefer the stable network ID over the pod IP, if present.
-      var podExternalIpAndPort = getPodExternalIpAndPort(pod, services);
-      var primaryAddressAndPort = podExternalIpAndPort || primaryStableNetworkAddressAndPort || hostIpAndPort;
+      var podExternalIpPort = getPodExternalIpPort(primary, services);
+      var primaryAddressAndPort = podExternalIpPort || primaryStableNetworkAddressAndPort || hostIpAndPort;
       mongo.initReplSet(db, primaryAddressAndPort, done);
       return;
     }
@@ -197,7 +196,10 @@ var notInReplicaSet = function(db, pods, services, done) {
 };
 
 var invalidReplicaSet = function(db, pods, services, status, done) {
-  console.log('[worker] invalidReplicaSet() ', status);
+  console.log('[worker] invalidReplicaSet()');
+  console.log('[worker] invalidReplicaSet pods: \n', pods);
+  console.log('[worker] invalidReplicaSet services: \n', services);
+  console.log('[worker] invalidReplicaSet status: \n', status);
   // The replica set config has become invalid, probably due to catastrophic errors like all nodes going down
   // this will force re-initialize the replica set on this node. There is a small chance for data loss here
   // because it is forcing a reconfigure, but chances are recovering from the invalid state is more important
@@ -216,7 +218,6 @@ var invalidReplicaSet = function(db, pods, services, status, done) {
 };
 
 var podElection = function(pods) {
-  console.log('[worker] podElection()')
   //Because all the pods are going to be running this code independently, we need a way to consistently find the same
   //node to kick things off, the easiest way to do that is convert their ips into longs and find the highest
   pods.sort(function(a,b) {
@@ -226,7 +227,6 @@ var podElection = function(pods) {
     if (aIpVal > bIpVal) return 1;
     return 0; //Shouldn't get here... all pods should have different ips
   });
-
   //Are we the lucky one?
   return pods[0].status.podIP == hostIp;
 };
@@ -239,20 +239,20 @@ var addrToAddLoop = function(pods, services, members) {
     if (pod.status.phase !== 'Running') {
       continue;
     }
-    var podExternalIpAndPort = getPodExternalIpAndPort(pod, services);
-    if (config.clusterExternalIP && !podExternalIpAndPort) {
+    var podExternalIpPort = getPodExternalIpPort(pod, services);
+    if (config.clusterExternalIP && !podExternalIpPort) {
       // Maybe the label has not been set yet.
-      console.log('[worker] No podExternalIpAndPort');
+      console.log('[worker] No podExternalIpPort');
       continue;
     }
-    console.log('[worker] podExternalIpAndPort ', podExternalIpAndPort);
+    console.log('[worker] podExternalIpPort ', podExternalIpPort);
     var podIpAddr = getPodIpAddressAndPort(pod);
     var podStableNetworkAddr = getPodStableNetworkAddressAndPort(pod);
     var podInRs = false;
 
     for (var j in members) {
       var member = members[j];
-      if (member.name === podIpAddr || member.name === podStableNetworkAddr || member.name === podExternalIpAndPort) {
+      if (member.name === podIpAddr || member.name === podStableNetworkAddr || member.name === podExternalIpPort) {
         /* If we have the pod's ip or the stable network address already in the config, no need to read it. Checks both the pod IP and the
         * stable network ID - we don't want any duplicates - either one of the two is sufficient to consider the node present. */
         podInRs = true;
@@ -262,11 +262,11 @@ var addrToAddLoop = function(pods, services, members) {
 
     if (!podInRs) {
       // If the node was not present, we prefer the stable network ID, if present.
-      var addrToUse = podExternalIpAndPort || podStableNetworkAddr || podIpAddr;
+      var addrToUse = podExternalIpPort || podStableNetworkAddr || podIpAddr;
       addrToAdd.push(addrToUse);
     }
   }
-  console.log('[worker] addrToAdd ', addrToAdd);
+  console.log('[worker] addrToAdd add addresses:\n', addrToAdd);  
   return addrToAdd;
 };
 
@@ -279,6 +279,7 @@ var addrToRemoveLoop = function(members) {
             addrToRemove.push(member.name);
         }
     }
+    console.log('[worker] addrToRemoveLoop remove addresses:\n ', addrToRemove);
     return addrToRemove;
 };
 
@@ -318,24 +319,35 @@ var getPodStableNetworkAddressAndPort = function(pod) {
   return pod.metadata.name + "." + config.k8sMongoServiceName + "." + pod.metadata.namespace + ".svc." + clusterDomain + ":" + mongoPort;
 };
 
-var getPodExternalIpAndPort = function(pod, services) {
-  console.log('[worker] getPodExternalIp()');
-  var labels = pod.metadata.labels;
-  console.log('[worker] podlables ', labels);
+var getPodExternalIpPort = function(pod, services) {
+  console.log('[worker] getPodExternalIpPort() pod: ', pod.metadata.name);
+  var externalIp = config.clusterExternalIP;
+  if (!externalIp)
+    return false;
+  
+  var podLabels = pod.metadata.labels;
+  var podPartOfLabels = {};
+  // console.log('[worker] getPodExternalIpPort the podlables:\n ', podLabels);
   for (var i in services) {
     var service = services[i];
     var nodeport = service.spec.ports[0].nodePort;
     var selector = service.spec.selector;
-    var externalIp = config.clusterExternalIP;
-    console.log('[worker] service ', selector, externalIp, nodeport);
+    // console.log('[worker] getPodExternalIpPort examinate node port service\n  selector: \n  ', selector
+    //   , '\n  nodeport: ', nodeport);
     var selectorKeys = Object.keys(selector);
     for (var ii in selectorKeys) {
       key = selectorKeys[ii];
-      if (labels[key] === selector[key]) {
-        return externalIp + ':' + nodeport;
+      if (podLabels[key] === selector[key]) {
+        podPartOfLabels[key] = podLabels[key]; 
       }
     }
+    // console.log('[worker] getPodExternalIpPort podPartOfLabels: \n', podPartOfLabels);
+    if (Object.keys(podPartOfLabels).length === selectorKeys.length) {
+      console.log('[worker] getPodExternalIpPort found service: ', service.metadata.name);
+      return externalIp + ':' + nodeport;
+    }
   }
+  console.log('[worker] getPodExternalIpPort can not find any node service!!!');
   return false;
 }
 

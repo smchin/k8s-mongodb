@@ -29,71 +29,82 @@ var init = function(done) {
 };
 
 var workloop = function workloop() {
-  var now = new Date().getTime();
+  var now = new Date().toString();
   console.log('[worker] workloop() ==== ', now, ' ====');
   if (!hostIp || !hostIpAndPort) {
     throw new Error('Must initialize with the host machine\'s addr');
   }
-  //Do in series so if k8s.getMongoPods fails, it doesn't open a db connection
-  async.series([
-    k8s.getMongoPods,
-    mongo.getDb,
-    k8s.getNodePortServices
-  ], function(err, results) {
-    var db = null;
-    if (err) {
-      if (Array.isArray(results) && results.length === 2) {
-        db = results[1];
-      }
-      return finish(err, db);
-    }
-
-    var pods = results[0];
-    db = results[1];
-    var nodeportServices = results[2];
-
-    //Lets remove any pods that aren't running
-    for (var i = pods.length - 1; i >= 0; i--) {
-      var pod = pods[i];
-      if (pod.status.phase !== 'Running') {
-        pods.splice(i, 1);
-      }
-    }
-
-    if (!pods.length) {
-      return finish('No pods are currently running, probably just give them some time.');
-    }
-
-    //Lets try and get the rs status for this mongo instance
-    //If it works with no errors, they are in the rs
-    //If we get a specific error, it means they aren't in the rs
-    mongo.replSetGetStatus(db, function(err, status) {
-      console.log('[worker] replSetGetStatus callback()');
+  try {
+    //Do in series so if k8s.getMongoPods fails, it doesn't open a db connection
+    async.series([
+      k8s.getMongoPods,
+      mongo.getDb,
+      k8s.getNodePortServices
+    ], function (err, results) {
+      var db = null;
       if (err) {
-        if (err.code && err.code == 94) {
-          notInReplicaSet(db, pods, nodeportServices, function(err) {
-            finish(err, db);
-          });
+        if (Array.isArray(results) && results.length === 2) {
+          db = results[1];
         }
-        else if (err.code && err.code == 93) {
-          invalidReplicaSet(db, pods, nodeportServices, status, function(err) {
-            finish(err, db);
-          });
-        }
-        else {
-          finish(err, db);
-        }
-        return;
+        return finish(err, db);
       }
 
-      inReplicaSet(db, pods, nodeportServices, status, function(err) {
-        finish(err, db);
+      var pods = results[0];
+      db = results[1];
+      var nodeportServices = results[2];
+      mongo.getServerStatus(db);
+      //Lets remove any pods that aren't running
+      for (var i = pods.length - 1; i >= 0; i--) {
+        var pod = pods[i];
+        if (pod.status.phase !== 'Running') {
+          console.log('[MyLog] remove not running pod ', pod.metadata.name);
+          pods.splice(i, 1);
+        }
+      }
+      console.log('[MyLog] pods: ', getMetadataName(pods));
+      // console.log('[MyLog] nodeportServices\n', getMetadataName(nodeportServices));
+
+      if (!pods.length) {
+        return finish('No pods are currently running, probably just give them some time.');
+      }
+
+      //Lets try and get the rs status for this mongo instance
+      //If it works with no errors, they are in the rs
+      //If we get a specific error, it means they aren't in the rs
+      mongo.replSetGetStatus(db, function (err, status) {
+        if (err) {
+          console.log('[worker][ReplicaSet] replSetGetStatus() ', err);
+          if (err.code && err.code == 94) {
+            notInReplicaSet(db, pods, nodeportServices, function (err) {
+              finish(err, db);
+            });
+          }
+          else if (err.code && err.code == 93) {
+            invalidReplicaSet(db, pods, nodeportServices, status, function (err) {
+              finish(err, db);
+            });
+          }
+          else {
+            finish(err, db);
+          }
+          return;
+        }
+        console.log('[worker][ReplicaSet] replSetGetStatus() ok: ', status.ok,', member: \n', status.members);
+        inReplicaSet(db, pods, nodeportServices, status, function (err) {
+          finish(err, db);
+        });
       });
     });
-  });
+  } catch (err) {
+    console.log('[worker] workloop() catched error: ', err);
+    // finish(err, db);
+  }
 };
 
 var finish = function(err, db) {
+  var now = new Date().toString();
+  console.log('[worker][mongo] finish() ', now.toString());
+
   if (err) {
     console.error('Error in workloop', err);
   }
@@ -106,7 +117,7 @@ var finish = function(err, db) {
 };
 
 var inReplicaSet = function(db, pods, services, status, done) {
-  console.log('[worker] inReplicaSet()');
+  console.log('[worker][ReplicaSet] inReplicaSet()');
   //If we're already in a rs and we ARE the primary, do the work of the primary instance (i.e. adding others)
   //If we're already in a rs and we ARE NOT the primary, just continue, nothing to do
   //If we're already in a rs and NO ONE is a primary, elect someone to do the work for a primary
@@ -135,7 +146,7 @@ var inReplicaSet = function(db, pods, services, status, done) {
 };
 
 var primaryWork = function(db, pods, services, members, shouldForce, done) {
-  console.log('[worker] primaryWork()');
+  console.log('[worker][ReplicaSet] primaryWork()');
   //Loop over all the pods we have and see if any of them aren't in the current rs members array
   //If they aren't in there, add them
   var addrToAdd = addrToAddLoop(pods, services, members);
@@ -150,7 +161,7 @@ var primaryWork = function(db, pods, services, members, shouldForce, done) {
 };
 
 var notInReplicaSet = function(db, pods, services, done) {
-  console.log('[worker] notInReplicaSet()');
+  console.log('[worker][ReplicaSet] notInReplicaSet()');
   var createTestRequest = function(pod) {
     return function(completed) {
       mongo.isInReplSet(pod.status.podIP, completed);
@@ -196,10 +207,10 @@ var notInReplicaSet = function(db, pods, services, done) {
 };
 
 var invalidReplicaSet = function(db, pods, services, status, done) {
-  console.log('[worker] invalidReplicaSet()');
-  console.log('[worker] invalidReplicaSet pods: \n', pods);
-  console.log('[worker] invalidReplicaSet services: \n', services);
-  console.log('[worker] invalidReplicaSet status: \n', status);
+  console.log('[worker][ReplicaSet] invalidReplicaSet()');
+  // console.log('[worker] invalidReplicaSet pods: \n', pods);
+  // console.log('[worker] invalidReplicaSet services: \n', services);
+  // console.log('[worker] invalidReplicaSet status: \n', status);
   // The replica set config has become invalid, probably due to catastrophic errors like all nodes going down
   // this will force re-initialize the replica set on this node. There is a small chance for data loss here
   // because it is forcing a reconfigure, but chances are recovering from the invalid state is more important
@@ -218,16 +229,17 @@ var invalidReplicaSet = function(db, pods, services, status, done) {
 };
 
 var podElection = function(pods) {
-  //Because all the pods are going to be running this code independently, we need a way to consistently find the same
-  //node to kick things off, the easiest way to do that is convert their ips into longs and find the highest
+  console.log('[worker][ReplicaSet] podElection()');
+  // Because all the pods are going to be running this code independently, we need a way to consistently find the same
+  // node to kick things off, the easiest way to do that is convert their ips into longs and find the highest
   pods.sort(function(a,b) {
     var aIpVal = ip.toLong(a.status.podIP);
     var bIpVal = ip.toLong(b.status.podIP);
     if (aIpVal < bIpVal) return -1;
     if (aIpVal > bIpVal) return 1;
-    return 0; //Shouldn't get here... all pods should have different ips
+    return 0; // Shouldn't get here... all pods should have different ips
   });
-  //Are we the lucky one?
+  // Are we the lucky one?
   return pods[0].status.podIP == hostIp;
 };
 
@@ -349,6 +361,22 @@ var getPodExternalIpPort = function(pod, services) {
   }
   console.log('[worker] getPodExternalIpPort can not find any node service!!!');
   return false;
+}
+
+var getMetadataName = function (resources) {
+  if (!resources)
+    return;
+  try {
+    if (Array.isArray(resources)) {
+      return resources.map(item => item && (item.details ? item.details.name : item.metadata.name));
+    } else if (Array.isArray(resources.items)) {
+      return resources.items.map(item => item.metadata.name);
+    } else if (resources) {
+      return resources.metadata.name;
+    }
+  } catch (error) {
+    return error;
+  }
 }
 
 module.exports = {

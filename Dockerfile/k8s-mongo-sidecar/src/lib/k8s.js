@@ -15,7 +15,6 @@ var client = new Client({
 });
 
 var getMongoPods = function getPods(done) {
-  console.log('[MyLog] k8s.getMongoPods()');
   client.pods.get(function (err, podResult) {
     if (err) {
       return done(err);
@@ -31,9 +30,10 @@ var getMongoPods = function getPods(done) {
       var pod = pods[i];
       if (podContainsLabels(pod, labels)) {
         results.push(pod);
-        console.log('[MyLog] k8s.getMongoPods() pod: ', pod.metadata.name);
+        // console.log('[MyLog] k8s.getMongoPods() pod: ', pod.metadata.name);
       }
     }
+    // console.log('[MyLog] k8s.getMongoPods() ', results.lenght());
     done(null, results);
   });
 };
@@ -82,9 +82,9 @@ var getNodePortServices = function (done) {
             nodeporServices = nodeporServices.concat(allServices[ii]);
           }
         }
-        for (var iii in nodeporServices) {
-          console.log('    nodeporService: ', nodeporServices[iii].metadata.name);  
-        }
+        // for (var iii in nodeporServices) {
+        //   console.log('    nodeporService: ', nodeporServices[iii].metadata.name);
+        // }
         done(null, nodeporServices);
     });
 }

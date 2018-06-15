@@ -66,25 +66,25 @@ var getDb = function(host, done) {
 };
 
 var replSetGetConfig = function(db, done) {
-  console.log('[mongo] replSetGetConfig()');
+  // console.log('[mongo] replSetGetConfig()');
   db.admin().command({ replSetGetConfig: 1 }, {}, function (err, results) {
     if (err) {
-      console.log('[mongo] replSetGetConfig error: \n', err);
+      console.log('[mongo] replSetGetConfig() error: \n', err);
       return done(err);
     }
-    console.log('[mongo] replSetGetConfig config: \n', results.config);
+    console.log('[mongo] replSetGetConfig() config: \n', results.config);
     return done(null, results.config);
   });
 };
 
 var replSetGetStatus = function(db, done) {
-  console.log('[mongo] replSetGetStatus()');
+  // console.log('[mongo] replSetGetStatus()');
   db.admin().command({ replSetGetStatus: {} }, {}, function (err, results) {
     if (err) {
-      console.log('[mongo] replSetGetStatus error: \n', err);
+      // console.log('[mongo] replSetGetStatus() error: \n', err);
       return done(err);
     }
-    console.log('[mongo] replSetGetStatus results: \n', results);
+    // console.log('[mongo] replSetGetStatus() results: \n', results);
     return done(null, results);
   });
 };
@@ -244,11 +244,23 @@ var isInReplSet = function(ip, done) {
   });
 };
 
+var getServerStatus = function(db) {
+  db.admin().command({ serverStatus: 1 }, {}, function (err, results) {
+    if (err) {
+      console.log('[mongo] getServerStatus() ', err.name, ': ', err.messages);
+      return;
+    }
+    console.log('[mongo] getServerStatus() connection: ', results.connections);
+    return ;
+  });
+}
+
 module.exports = {
   getDb: getDb,
   getDbWithClient: getDbWithClient,
   replSetGetStatus: replSetGetStatus,
   initReplSet: initReplSet,
   addNewReplSetMembers: addNewReplSetMembers,
-  isInReplSet: isInReplSet
+  isInReplSet: isInReplSet,
+  getServerStatus: getServerStatus
 };

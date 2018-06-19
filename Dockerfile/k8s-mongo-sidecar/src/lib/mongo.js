@@ -121,7 +121,7 @@ var initReplSet = function(db, hostIpAndPort, done) {
 };
 
 var replSetReconfig = function(db, rsConfig, force, done) {
-  console.log('[mongo] replSetReconfig()', rsConfig);
+  console.log('[mongo] replSetReconfig() force: ', force, '\n', rsConfig);
   if (!force) {
     rsConfig.version++;
   }
@@ -141,8 +141,9 @@ var addNewReplSetMembers = function(db, addrToAdd, addrToRemove, shouldForce, do
     if (err) {
       return done(err);
     }
+
+    removeDeadMembers(rsConfig, addrToRemove, shouldForce);
     if (!shouldForce) {
-      removeDeadMembers(rsConfig, addrToRemove, shouldForce);
       addNewMembers(rsConfig, addrToAdd, shouldForce);
     } else {
       replSetReconfigMembers(rsConfig, addrToAdd);
@@ -183,11 +184,15 @@ var replSetReconfigMembers = function(rsConfig, addrsToAdd) {
       newMembers.push(member);
     }
   }
-  rsConfig.members = newMembers;
+  if (newMembers.length === 0) {
+    rsConfig.members = members;
+  } else {
+    rsConfig.members = newMembers;
+  }
 };
 
 var addNewMembers = function(rsConfig, addrsToAdd) {
-  console.log('[mongo] addNewMembers()');
+  // console.log('[mongo] addNewMembers()');
   if (!addrsToAdd || !addrsToAdd.length) return;
 
   //Follows what is basically in mongo's rs.add function
@@ -210,7 +215,6 @@ var addNewMembers = function(rsConfig, addrsToAdd) {
 };
 
 var removeDeadMembers = function(rsConfig, addrsToRemove) {
-  console.log('[mongo] removeDeadMembers()');
   if (!addrsToRemove || !addrsToRemove.length) return;
 
   for (var i in addrsToRemove) {
